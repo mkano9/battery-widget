@@ -13,12 +13,14 @@ import android.widget.RemoteViews;
 
 public class BatteryWidget extends AppWidgetProvider {
 	private static final String ACTION_BATTERY_UPDATE = "com.migapro.battery.action.UPDATE";
-	public static int batteryLevelLeft = 0;
+	private int batteryLevel = 0;
 	
 	@Override
 	public void onEnabled(Context context) {
 		super.onEnabled(context);
 		
+		LogFile.log("onEnabled()");
+
 		turnAlarmOnOff(context, true);
 		context.startService(new Intent(context, ScreenMonitorService.class));
 	}
@@ -27,33 +29,46 @@ public class BatteryWidget extends AppWidgetProvider {
 		AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 		Intent intent = new Intent(ACTION_BATTERY_UPDATE);
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-		
-		if (turnOn) // Add extra 1 sec because sometimes ACTION_BATTERY_CHANGED is called after the first alarm
+
+		if (turnOn) { // Add extra 1 sec because sometimes ACTION_BATTERY_CHANGED is called after the first alarm
 			alarmManager.setRepeating(AlarmManager.RTC, System.currentTimeMillis() + 1000, 300 * 1000, pendingIntent);
-		else
+			LogFile.log("Alarm set");
+		} else {
 			alarmManager.cancel(pendingIntent);
+			LogFile.log("Alarm disabled");
+		}
 	}
 	
 	@Override
-	public void onUpdate(Context context, AppWidgetManager appWidgetManager,
-			int[] appWidgetIds) {
+	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
 		super.onUpdate(context, appWidgetManager, appWidgetIds);
-		
+
+		LogFile.log("onUpdate()");
+
 		// Sometimes when the phone is booting, onUpdate method gets called before onEnabled()
-		int tempLevelLeft = calculateBatteryLevel(context);
-		if (batteryLevelLeft != tempLevelLeft)
-			batteryLevelLeft = tempLevelLeft;
+		int currentLevel = calculateBatteryLevel(context);
+		if (batteryChanged(currentLevel)) {
+			batteryLevel = currentLevel;
+			LogFile.log("Battery changed");
+		}
 		updateViews(context);
+	}
+	
+	private boolean batteryChanged(int currentLevelLeft) {
+		return (batteryLevel != currentLevelLeft);
 	}
 	
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		super.onReceive(context, intent);
 		
+		LogFile.log("onReceive() " + intent.getAction());
+		
 		if (intent.getAction().equals(ACTION_BATTERY_UPDATE)) {
-			int tempLevelLeft = calculateBatteryLevel(context);
-			if (batteryLevelLeft != tempLevelLeft) {
-				batteryLevelLeft = tempLevelLeft;
+			int currentLevel = calculateBatteryLevel(context);
+			if (batteryChanged(currentLevel)) {
+				LogFile.log("Battery changed");
+				batteryLevel = currentLevel;
 				updateViews(context);
 			}
 		}
@@ -63,11 +78,15 @@ public class BatteryWidget extends AppWidgetProvider {
 	public void onDisabled(Context context) {
 		super.onDisabled(context);
 		
+		LogFile.log("onDisabled()");
+		
 		turnAlarmOnOff(context, false);
 		context.stopService(new Intent(context, ScreenMonitorService.class));
 	}
 	
 	private int calculateBatteryLevel(Context context) {
+		LogFile.log("calculateBatteryLevel()");
+		
 		Intent batteryIntent = context.getApplicationContext().registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 		
 		int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
@@ -76,8 +95,10 @@ public class BatteryWidget extends AppWidgetProvider {
 	}
 	
 	private void updateViews(Context context) {
+		LogFile.log("updateViews()");
+		
 		RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-		views.setTextViewText(R.id.batteryText, batteryLevelLeft + "%");
+		views.setTextViewText(R.id.batteryText, batteryLevel + "%");
 		
 		ComponentName componentName = new ComponentName(context, BatteryWidget.class);
 		AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
