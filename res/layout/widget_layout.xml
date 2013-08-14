@@ -11,6 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
         android:background="#282828"
+        android:padding="6dp"
         android:textColor="#ffffff"
         android:textSize="21sp" />
 
