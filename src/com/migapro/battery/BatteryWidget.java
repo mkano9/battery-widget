@@ -28,10 +28,10 @@ public class BatteryWidget extends AppWidgetProvider {
 	public static void turnAlarmOnOff(Context context, boolean turnOn) {
 		AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 		Intent intent = new Intent(ACTION_BATTERY_UPDATE);
-		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		if (turnOn) { // Add extra 1 sec because sometimes ACTION_BATTERY_CHANGED is called after the first alarm
-			alarmManager.setRepeating(AlarmManager.RTC, System.currentTimeMillis() + 1000, 300 * 1000, pendingIntent);
+			alarmManager.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + 1000, 300 * 1000, pendingIntent);
 			LogFile.log("Alarm set");
 		} else {
 			alarmManager.cancel(pendingIntent);
