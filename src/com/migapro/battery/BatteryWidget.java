@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
+import android.os.SystemClock;
 import android.widget.RemoteViews;
 
 
@@ -31,7 +32,7 @@ public class BatteryWidget extends AppWidgetProvider {
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		if (turnOn) { // Add extra 1 sec because sometimes ACTION_BATTERY_CHANGED is called after the first alarm
-			alarmManager.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + 1000, 300 * 1000, pendingIntent);
+			alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 1000, 300 * 1000, pendingIntent);
 			LogFile.log("Alarm set");
 		} else {
 			alarmManager.cancel(pendingIntent);
